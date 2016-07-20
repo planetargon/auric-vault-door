@@ -31,6 +31,7 @@ module Auric
         else
           @url = SANDBOXURLS
         end
+        @debug = args[:debug] || false
       end
 
       def encrypt(data)
@@ -91,21 +92,22 @@ module Auric
 
       def call_auric(method, data)
         signature = figure_hexdigest_for_auth(data)
+        options = {
+          body: data.to_json,
+          headers: { 'X-VAULT-HMAC' => signature }
+        }
+
+        options = options.merge({ debug_output: $stdout }) if @debug
+
         begin
         HTTParty.post(
           @url[0],
-          {
-            :body => data.to_json,
-            headers: { 'X-VAULT-HMAC' => signature }
-          }
+          options
         )
         rescue
           HTTParty.post(
             @url[1],
-            {
-              :body => data.to_json,
-              headers: { 'X-VAULT-HMAC' => signature }
-            }
+            options
           )
         end
       end
